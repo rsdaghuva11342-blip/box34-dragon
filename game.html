@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Box34 Dragon</title>
+    <style>
+        * { box-sizing: border-box; }
+        body, html {
+            background-color: #0b0f19; color: #fff;
+            font-family: sans-serif; margin: 0; padding: 0;
+            width: 100vw; height: 100vh; overflow: hidden; user-select: none;
+        }
+        .screen { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; background: #0b0f19; }
+        
+        /* Loading Screen Style */
+        #loading-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; background: #0b0f19; }
+        .load-box { width: 70px; height: 70px; border-radius: 16px; border: 2px solid #3b82f6; background: #111827; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; box-shadow: 0 0 20px rgba(59,130,246,0.5); cursor: pointer; }
+        .load-title { font-size: 20px; font-weight: bold; letter-spacing: 1px; margin-bottom: 8px; color: #fff; }
+        .load-status { font-size: 12px; color: #9ca3af; margin-bottom: 20px; text-align: center; }
+        .load-bar-container { width: 200px; height: 4px; background: #1f2937; border-radius: 2px; overflow: hidden; }
+        .load-bar { width: 100%; height: 100%; background: #3b82f6; }
+
+        /* Software Settings Screen */
+        #settings-screen { display: none; justify-content: center; align-items: center; z-index: 999; background: #0b0f19; }
+        .mobox-dialog { background: #111827; border: 1px solid #374151; width: 330px; border-radius: 8px; padding: 15px; color: #d1d5db; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .dialog-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid #374151; padding-bottom: 8px; }
+        .dialog-header-icon { width: 35px; height: 35px; border-radius: 8px; border: 1px solid #3b82f6; background: #111827; display: flex; justify-content: center; align-items: center; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; background: #1f2937; border: 1px solid #374151; padding: 6px 8px; margin-bottom: 6px; border-radius: 4px; font-size: 11px; }
+        .setting-control { background: #111827; color: #fff; border: 1px solid #4b5563; padding: 4px; font-size: 10px; width: 130px; border-radius: 3px; }
+        .launcher-btn { background: #2563eb; color: #fff; border: none; width: 100%; padding: 9px; font-weight: bold; font-size: 11px; cursor: pointer; margin-top: 10px; border-radius: 4px; }
+        .launcher-btn:active { background: #1d4ed8; }
+
+        /* Windows Desktop Screen */
+        #desktop-screen { display: none; flex-direction: column; background: #1e1e1e; color: #ccc; }
+        .win-menubar { background: #252525; padding: 4px 8px; font-size: 11px; display: flex; gap: 12px; border-bottom: 1px solid #333; color: #fff; align-items: center; }
+        .win-menubar span { cursor: pointer; }
+        .win-toolbar { background: #222; padding: 4px 8px; display: flex; gap: 15px; font-size: 10px; border-bottom: 1px solid #333; align-items: center; }
+        .win-toolbar div { cursor: pointer; }
+        .win-address-row { background: #222; padding: 4px 8px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid #333; }
+        .address-box { background: #141414; border: 1px solid #3c3c3c; padding: 3px 6px; flex: 1; font-size: 11px; color: #ccc; }
+        
+        .win-content { display: flex; flex: 1; overflow: hidden; }
+        .win-treeview { width: 155px; background: #1e1e1e; border-right: 1px solid #333; padding: 6px; font-size: 11px; overflow-y: auto; }
+        .tree-item { cursor: pointer; padding: 4px 2px; white-space: nowrap; }
+        .tree-item:hover { background: #2a2d2e; color: #fff; }
+
+        .win-filelist-area { flex: 1; background: #1e1e1e; overflow-y: auto; }
+        .file-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .file-table th { background: #252525; text-align: left; padding: 4px 8px; border-bottom: 1px solid #333; font-weight: normal; color: #fff; }
+        .file-table td { padding: 6px 8px; border-bottom: 1px solid #252525; cursor: pointer; }
+        .file-table tr:hover { background: #2a2d2e; color: #fff; }
+
+        .win-taskbar { height: 26px; background: #181818; display: flex; align-items: center; padding: 0 4px; border-top: 1px solid #282828; position: absolute; bottom: 0; width: 100%; }
+        .win-start-btn { background: #252525; color: #fff; border: 1px solid #3c3c3c; padding: 2px 8px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+
+        #realFileInput { display: none; }
+        .console-box { background: #111; color: #00ff66; font-family: monospace; font-size: 10px; padding: 4px 8px; border-top: 1px solid #333; height: 35px; overflow: hidden; }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Screen (Ab yahan click karke bhi turant aage ja sakte hain) -->
+    <div id="loading-screen" class="screen" style="display: flex;" onclick="openSettings()">
+        <div class="load-box">
+            <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            </svg>
+        </div>
+        <div class="load-title">BOX34 DRAGON</div>
+        <div id="load-status" class="load-status">Tap anywhere or wait to start...</div>
+        <div class="load-bar-container">
+            <div class="load-bar"></div>
+        </div>
+    </div>
+
+    <!-- Software Settings Screen -->
+    <div id="settings-screen" class="screen">
+        <div class="mobox-dialog">
+            <div class="dialog-header">
+                <div class="dialog-header-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <div style="font-size: 12px; font-weight: bold; color:#fff;">Box34 Dragon Config</div>
+                    <div style="font-size: 9px; color: #9ca3af;">Software & Environment Manager</div>
+                </div>
+            </div>
+            <div class="setting-row"><span>Container Name</span><input type="text" class="setting-control" value="Dragon-Game-Box"></div>
+            <div class="setting-row"><span>Box64 Version</span><select class="setting-control"><option>Box64 v0.3.2 (Latest)</option></select></div>
+            <div class="setting-row"><span>Wine Version</span><select class="setting-control"><option>Wine 9.0 (Default)</option></select></div>
+            <div class="setting-row"><span>Graphics Driver</span><select class="setting-control"><option>Turnip + Zink</option></select></div>
+            <button class="launcher-btn" onclick="openDesktop()">Launch Desktop Environment</button>
+        </div>
+    </div>
+
+    <!-- Windows Desktop Screen -->
+    <div id="desktop-screen" class="screen">
+        <div class="win-menubar">
+            <span style="display:flex; align-items:center; gap:4px;">🐉 Box34</span>
+            <span onclick="openSettingsFromDesktop()">Config</span>
+            <span onclick="triggerFilePicker()">Run .exe</span>
+            <span onclick="alert('Box34 Dragon - Drive Explorer')">About</span>
+        </div>
+        <div class="win-toolbar">
+            <div onclick="openDrive('C')" style="color:#f1c40f;">📁 C: Drive</div>
+            <div onclick="triggerFilePicker()" style="color:#4cd137; font-weight:bold;">🎮 Run Game (.exe)</div>
+            <div onclick="openSettingsFromDesktop()" style="color:#3498db;">⚙️ Software Setup</div>
+        </div>
+        <div class="win-address-row">
+            <div class="address-box" id="pathDisp">C:\</div>
+        </div>
+        <div class="win-content">
+            <div class="win-treeview" id="treeViewContainer"></div>
+            <div class="win-filelist-area">
+                <table class="file-table" id="fileTable">
+                    <tr><th>Name</th><th>Type</th></tr>
+                    <tr onclick="triggerFilePicker()"><td>📁 Open Phone Storage / Downloads</td><td>Folder</td></tr>
+                    <tr onclick="triggerFilePicker()" style="color:#4cd137;"><td>🎮 Select Game File (.exe)</td><td>Executable</td></tr>
+                </table>
+            </div>
+        </div>
+        <div class="console-box" id="consoleLog">
+            [System] Environment ready. Select any drive or click 'Run .exe'.
+        </div>
+        <div class="win-taskbar">
+            <button class="win-start-btn" onclick="openSettingsFromDesktop()">🐉 Start</button>
+        </div>
+    </div>
+
+    <input type="file" id="realFileInput" accept=".exe,.zip,.apk" onchange="handleFileSelected(this)">
+
+    <script>
+        function openSettings() {
+            let lScreen = document.getElementById('loading-screen');
+            let sScreen = document.getElementById('settings-screen');
+            if(lScreen) lScreen.style.display = 'none';
+            if(sScreen) sScreen.style.display = 'flex';
+        }
+
+        // Automatic load bypass incase timer fails
+        setTimeout(openSettings, 2000);
+
+        function openDesktop() {
+            let sScreen = document.getElementById('settings-screen');
+            let dScreen = document.getElementById('desktop-screen');
+            if(sScreen) sScreen.style.display = 'none';
+            if(dScreen) dScreen.style.display = 'flex';
+            buildAZDrives();
+            openDrive('C');
+        }
+
+        function openSettingsFromDesktop() {
+            let dScreen = document.getElementById('desktop-screen');
+            let sScreen = document.getElementById('settings-screen');
+            if(dScreen) dScreen.style.display = 'none';
+            if(sScreen) sScreen.style.display = 'flex';
+        }
+
+        function triggerFilePicker() {
+            let fileInput = document.getElementById('realFileInput');
+            if(fileInput) fileInput.click();
+        }
+
+        function handleFileSelected(input) {
+            if (input.files && input.files[0]) {
+                let fileName = input.files[0].name;
+                let logBox = document.getElementById('consoleLog');
+                if(logBox) {
+                    logBox.innerHTML = `[Box64] Selected: ${fileName}<br>[Status] Ready to run via Wine.`;
+                }
+                alert("Game File Loaded: " + fileName + "\nLaunching container...");
+            }
+        }
+
+        function buildAZDrives() {
+            let treeContainer = document.getElementById('treeViewContainer');
+            if(!treeContainer) return;
+            let html = '';
+            let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            for (let i = 0; i < alphabet.length; i++) {
+                let char = alphabet[i];
+                html += `<div class="tree-item" onclick="openDrive('${char}')">📁 ${char}: Drive</div>`;
+            }
+            treeContainer.innerHTML = html;
+        }
+
+        function openDrive(letter) {
+            let path = document.getElementById('pathDisp');
+            let table = document.getElementById('fileTable');
+            if(path) path.innerText = letter + ":\\";
+            if(table) {
+                table.innerHTML = `
+                    <tr><th>Name</th><th>Type</th></tr>
+                    <tr onclick="triggerFilePicker()"><td>📁 Open Phone Storage / Downloads</td><td>Folder</td></tr>
+                    <tr onclick="triggerFilePicker()" style="color:#4cd137;"><td>🎮 Select .exe Game from ${letter}:</td><td>Executable</td></tr>
+                `;
+            }
+            let logBox = document.getElementById('consoleLog');
+            if(logBox) logBox.innerHTML = `[Drive] Switched to ${letter}:\\ drive.`;
+        }
+    </script>
+</body>
+</html>
+
